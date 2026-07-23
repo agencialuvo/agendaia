@@ -3,7 +3,7 @@ import { EtapaLead } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { TenantsService } from '../tenants/tenants.service';
 import { ScoringService } from '../scoring/scoring.service';
-import { MetaLeadWebhookPayload } from './dto/meta-lead-webhook.dto';
+import { MetaLeadgenData } from './dto/meta-lead-webhook.dto';
 
 // Campos estándar que Meta Lead Ads usa para datos de contacto (no son preguntas de scoring).
 const CAMPO_TELEFONO = 'phone_number';
@@ -18,7 +18,14 @@ export class LeadsService {
     private readonly scoringService: ScoringService,
   ) {}
 
-  async crearDesdeMetaLeadAds(clinicaSlug: string, payload: MetaLeadWebhookPayload) {
+  async crearDesdeMetaLeadAds(clinicaSlug: string, leadgenId: string, payload: MetaLeadgenData) {
+    // Si Meta reintenta la notificación del webhook (timeout, error nuestro, etc.),
+    // no debemos duplicar el lead — el leadgen_id es único por lead real de Meta.
+    const existente = await this.prisma.lead.findUnique({ where: { metaLeadgenId: leadgenId } });
+    if (existente) {
+      return existente;
+    }
+
     const clinica = await this.tenantsService.findBySlug(clinicaSlug);
 
     const respuestas: Record<string, string> = {};
@@ -60,6 +67,7 @@ export class LeadsService {
         telefono: respuestas[CAMPO_TELEFONO] ?? '',
         respuestasFormulario: respuestas,
         origen: 'meta_lead_ads',
+        metaLeadgenId: leadgenId,
       },
     });
 

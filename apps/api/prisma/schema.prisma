@@ -143,6 +143,9 @@ model Lead {
   categoriaScore  CategoriaScore?
   etapa           EtapaLead  @default(CREATED)
   origen          String?    // "meta_lead_ads" | "whatsapp_organico" | "sorteo"
+  // Id del leadgen de Meta — evita duplicar el lead si Meta reintenta el webhook
+  // (reintenta si no respondemos 200 a tiempo, o ante cualquier error nuestro).
+  metaLeadgenId   String?    @unique
   retargetingDia15Enviado Boolean @default(false)
   retargetingDia30Enviado Boolean @default(false)
   createdAt       DateTime   @default(now())

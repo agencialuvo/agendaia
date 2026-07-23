@@ -4,7 +4,10 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // rawBody: true conserva el body crudo en request.rawBody — lo necesita el webhook
+  // de Meta para validar la firma X-Hub-Signature-256 (se calcula sobre los bytes
+  // exactos que Meta envió, no sobre el JSON ya parseado).
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
 
   // Necesario para que req.protocol/req.hostname reflejen la URL pública real detrás
   // del proxy de Railway — sin esto, la validación de firma del webhook de Twilio falla
