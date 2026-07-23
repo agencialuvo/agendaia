@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotImplementedException } from '@nestjs/common';
-import Twilio from 'twilio';
+import Twilio = require('twilio');
 
 // Integración con WhatsApp Business Platform (envío/recepción de mensajes y plantillas).
 // Mientras no haya acceso real (Meta Cloud API o BSP), WHATSAPP_PROVIDER=simulado

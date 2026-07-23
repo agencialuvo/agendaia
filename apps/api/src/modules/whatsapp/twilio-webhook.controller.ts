@@ -1,6 +1,6 @@
 import { Body, Controller, Headers, Post, Req, UnauthorizedException } from '@nestjs/common';
 import type { Request } from 'express';
-import Twilio from 'twilio';
+import Twilio = require('twilio');
 import { WhatsappService } from './whatsapp.service';
 import { ConversacionesService } from '../conversaciones/conversaciones.service';
 import { IaService } from '../ia/ia.service';
