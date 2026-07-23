@@ -1,9 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Necesario para que req.protocol/req.hostname reflejen la URL pública real detrás
+  // del proxy de Railway — sin esto, la validación de firma del webhook de Twilio falla
+  // porque construiría la URL como http:// en vez de https://.
+  app.set('trust proxy', 1);
 
   app.enableCors({
     origin: process.env.WEB_URL ?? 'http://localhost:5173',

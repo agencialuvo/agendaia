@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { WhatsappController } from './whatsapp.controller';
+import { TwilioWebhookController } from './twilio-webhook.controller';
 import { WhatsappService } from './whatsapp.service';
 import { ConversacionesModule } from '../conversaciones/conversaciones.module';
 import { IaModule } from '../ia/ia.module';
@@ -7,7 +8,7 @@ import { IaModule } from '../ia/ia.module';
 // Integración con WhatsApp Business Platform (envío/recepción de mensajes y plantillas).
 @Module({
   imports: [ConversacionesModule, IaModule],
-  controllers: [WhatsappController],
+  controllers: [WhatsappController, TwilioWebhookController],
   providers: [WhatsappService],
   exports: [WhatsappService],
 })
