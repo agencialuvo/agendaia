@@ -8,12 +8,14 @@ import ReportesPage from './pages/reportes/ReportesPage';
 import ReportePublicoPage from './pages/reportes/ReportePublicoPage';
 import UsuariosPage from './pages/usuarios/UsuariosPage';
 import LoginPage from './pages/login/LoginPage';
+import PoliticaPrivacidadPage from './pages/legal/PoliticaPrivacidadPage';
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/legal/privacidad" element={<PoliticaPrivacidadPage />} />
         <Route path="/reportes/publico/:token" element={<ReportePublicoPage />} />
         <Route element={<RutaProtegida />}>
           <Route element={<AppLayout />}>
