@@ -1,0 +1,15 @@
+node_modules
+**/node_modules
+**/dist
+**/.scratch
+.git
+.gitignore
+*.md
+docs/
+.env
+**/.env
+**/.env.local
+*.log
+.vscode
+.idea
+coverage
