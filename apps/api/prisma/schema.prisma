@@ -1,0 +1,332 @@
+// Schema de base de datos — VELIA CRM-IA
+// Multi-tenant desde el diseño: todo cuelga de Clinica (tenant)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Multi-tenant ──────────────────────────────────────────────
+
+model Clinica {
+  id                String   @id @default(uuid())
+  slug              String   @unique // ej. "velia" — coincide con clinica.id del guión estructurado en config/guiones/*.json
+  nombre            String
+  direccion         String?
+  referenciaDireccion String?
+  horarioAtencion   Json     // { dias, horaInicio, horaFin, corteMismoDia, domingo: {...} }
+  guionConfig       Json?    // snapshot del guión estructurado activo (config/guiones/*.json)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  usuarios          Usuario[]
+  doctores          Doctor[]
+  servicios         Servicio[]
+  campanas          Campana[]
+  leads             Lead[]
+  citas             Cita[]
+  reportes          ReporteAnalisis[]
+}
+
+// Usuario de plataforma (tipoUsuario = PLATAFORMA): sin clinicaId, rolPlataforma seteado,
+// ve/administra todas las clínicas — es el equipo de la empresa dueña del sistema.
+// Usuario de clínica (tipoUsuario = CLINICA): con clinicaId, rolClinica seteado, acotado a su clínica.
+model Usuario {
+  id            String         @id @default(uuid())
+  nombre        String
+  correo        String         @unique
+  passwordHash  String
+  tipoUsuario   TipoUsuario
+  rolPlataforma RolPlataforma?
+  rolClinica    RolClinica?
+  clinicaId     String?
+  clinica       Clinica?       @relation(fields: [clinicaId], references: [id])
+  createdAt     DateTime       @default(now())
+}
+
+enum TipoUsuario {
+  PLATAFORMA
+  CLINICA
+}
+
+// Equipo de la empresa creadora del sistema — ve todas las clínicas.
+enum RolPlataforma {
+  ADMIN_MASTER // total, protegido: borrarlo requiere CLAVE_MAESTRA_ELIMINACION
+  SUPERVISOR
+  SOPORTE
+}
+
+// Equipo de cada clínica — acotado a su propia clinicaId.
+enum RolClinica {
+  ADMIN_MASTER // total dentro de su clínica, protegido: borrarlo requiere CLAVE_MAESTRA_ELIMINACION
+  ADMIN // total excepto borrar al ADMIN_MASTER de su clínica
+  ASESOR // gestiona leads, kanban, conversaciones
+  DOCTOR // ve su propia agenda y ficha de control
+  RECEPCION // agenda citas, sin ver reportes financieros
+}
+
+model Doctor {
+  id             String   @id @default(uuid())
+  nombre         String
+  especialidades String[] // ej. ["Bótox", "Control post-aplicación"]
+  clinicaId      String
+  clinica        Clinica  @relation(fields: [clinicaId], references: [id])
+  citas          Cita[]
+
+  @@unique([clinicaId, nombre])
+}
+
+// ── Servicios (con lógica de evaluación previa) ──────────────
+
+model Servicio {
+  id                          String   @id @default(uuid())
+  clinicaId                   String
+  clinica                     Clinica  @relation(fields: [clinicaId], references: [id])
+  slug                        String   // ej. "botox_toxina_botulinica" — coincide con el id del guión estructurado
+  nombre                      String
+  servicioPrincipal           Boolean  @default(false)
+  requiereEvaluacionPrevia    Boolean  @default(true)
+  precioEvaluacion            Decimal? @db.Decimal(10, 2)
+  evaluacionDescontableDelTratamiento Boolean @default(true)
+  marcasDisponibles           Json?    // [{ marca, precioReferencial, prioridad, margen }]
+  reglaPriorizacionComercial  Json?    // { logica, detalle, fraseSugerida }
+  aliasesColoquiales          String[] @default([]) // ej. "full face" para botox_toxina_botulinica — mismo servicio, no uno nuevo
+  margenPorcentaje            Decimal? @db.Decimal(5, 2) // input manual de la clínica (ej. 60.00 = 60% de margen sobre el precio de venta)
+  activo                      Boolean  @default(true)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  citas                       Cita[]
+  ventas                      Venta[]
+
+  @@unique([clinicaId, slug])
+}
+
+// ── Campañas / atribución (Meta Lead Ads) ────────────────────
+
+model Campana {
+  id            String   @id @default(uuid())
+  clinicaId     String
+  clinica       Clinica  @relation(fields: [clinicaId], references: [id])
+  metaCampaignId String  @unique
+  nombre        String
+  adsetId       String?
+  adsetNombre   String?
+  adId          String?
+  adNombre      String?
+  plataforma    String?  // fb | ig
+  esOrganico    Boolean  @default(false)
+  presupuestoMensual Decimal? @db.Decimal(10, 2)
+  // Gasto real del mes — input manual mientras no hay acceso a Meta Ads API para leerlo automático.
+  gastoRealMensual   Decimal? @db.Decimal(10, 2)
+  createdAt     DateTime @default(now())
+
+  leads         Lead[]
+}
+
+// ── Leads ─────────────────────────────────────────────────────
+
+model Lead {
+  id              String     @id @default(uuid())
+  clinicaId       String
+  clinica         Clinica    @relation(fields: [clinicaId], references: [id])
+  campanaId       String?
+  campana         Campana?   @relation(fields: [campanaId], references: [id])
+  nombreCompleto  String?
+  telefono        String
+  respuestasFormulario Json? // respuestas crudas del formulario de Meta (flexible por clínica)
+  score           Int?
+  categoriaScore  CategoriaScore?
+  etapa           EtapaLead  @default(CREATED)
+  origen          String?    // "meta_lead_ads" | "whatsapp_organico" | "sorteo"
+  retargetingDia15Enviado Boolean @default(false)
+  retargetingDia30Enviado Boolean @default(false)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  conversaciones  Conversacion[]
+  citas           Cita[]
+  fichasControl   FichaControl[]
+  ventas          Venta[]
+}
+
+enum CategoriaScore {
+  CALIENTE
+  TIBIO
+  FRIO
+}
+
+enum EtapaLead {
+  CREATED
+  PUNTUADO
+  CONTACTADO
+  EN_CONVERSACION
+  AGENDADO
+  CONFIRMADO
+  ATENDIDO
+  NO_SHOW
+  CONTROL_PROGRAMADO
+  GANADO
+  PERDIDO
+  EN_RETARGETING
+  REQUIERE_HUMANO
+}
+
+// ── Conversaciones y mensajes (reemplaza las columnas de fecha del Excel) ──
+
+model Conversacion {
+  id          String   @id @default(uuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id])
+  canal       String   @default("whatsapp")
+  modo        ModoConversacion @default(BOT)
+  createdAt   DateTime @default(now())
+
+  mensajes    Mensaje[]
+}
+
+enum ModoConversacion {
+  BOT
+  HUMANO
+}
+
+model Mensaje {
+  id              String       @id @default(uuid())
+  conversacionId  String
+  conversacion    Conversacion @relation(fields: [conversacionId], references: [id])
+  remitente       String       // "lead" | "bot" | "agente:<usuarioId>"
+  texto           String?
+  mediaUrl        String?
+  generadoPor     String       // "ia" | "humano" | "sistema"
+  toolCallsJson   Json?        // registro de tool calls invocadas por la IA en este turno
+  timestamp       DateTime     @default(now())
+}
+
+// ── Citas (los 6 datos mínimos de agenda) ────────────────────
+
+model Cita {
+  id                  String   @id @default(uuid())
+  clinicaId           String
+  clinica             Clinica  @relation(fields: [clinicaId], references: [id])
+  leadId              String
+  lead                Lead     @relation(fields: [leadId], references: [id])
+  servicioId          String
+  servicio            Servicio @relation(fields: [servicioId], references: [id])
+  doctorId            String?
+  doctor              Doctor?  @relation(fields: [doctorId], references: [id])
+  motivoConsulta      String
+  fecha               DateTime
+  hora                String
+  tipo                TipoCita @default(EVALUACION)
+  estado              EstadoCita @default(PROGRAMADA)
+  googleCalendarEventId String?
+
+  // Secuencia de recordatorios automáticos (docs/Plan_de_Implementacion_Paso_a_Paso.md, Etapa 4, punto 16)
+  recordatorio24hEnviado     Boolean   @default(false)
+  recordatorioMananaEnviado  Boolean   @default(false)
+  recordatorio2hEnviado      Boolean   @default(false)
+  noShowMensajeEnviado       Boolean   @default(false)
+  noShowMensajeEnviadoEn     DateTime?
+  cupoLiberado               Boolean   @default(false)
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  fichaControl        FichaControl?
+}
+
+enum TipoCita {
+  EVALUACION
+  TRATAMIENTO_DIRECTO
+  CONTROL
+}
+
+enum EstadoCita {
+  PROGRAMADA
+  REPROGRAMADA
+  CONFIRMADA
+  ATENDIDA
+  NO_SHOW
+  CANCELADA
+}
+
+// ── Ficha de control (post-visita, en consultorio) ───────────
+
+model FichaControl {
+  id                    String   @id @default(uuid())
+  citaId                String   @unique
+  cita                  Cita     @relation(fields: [citaId], references: [id])
+  leadId                String
+  lead                  Lead     @relation(fields: [leadId], references: [id])
+
+  // Identificación
+  documentoIdentidad    String?
+  fechaNacimiento        DateTime?
+
+  // Historia clínica
+  alergias              String?
+  enfermedadesRelevantes String?
+  medicacionActual       String?
+  embarazoLactancia      Boolean?
+  tratamientosPrevios    Json?
+
+  // Consentimiento
+  consentimientoInformado Boolean @default(false)
+  autorizaUsoImagenMarketing Boolean @default(false)
+
+  // Tratamiento aplicado
+  productoMarca          String?
+  numeroLote             String?
+  unidadesDosis           Decimal? @db.Decimal(10, 2)
+  zonasTratadas           String?
+  tecnica                 String?
+
+  // Seguimiento
+  reaccionesAdversas       String?
+  indicacionesPostTratamiento String?
+  fechaProximoControl      DateTime?  // dispara la secuencia automática de recordatorios de control
+  recordatorioControlEnviado Boolean @default(false)
+  resultadoControl         String?
+  fotosAntesDespuesUrls    Json?
+
+  // Comercial
+  montoCobrado             Decimal? @db.Decimal(10, 2)
+  formaPago                String?
+  crossSellSugerido        String?
+  crossSellAceptado        Boolean?
+
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
+// ── Ventas (alimenta la calculadora de rentabilidad) ──────────
+
+model Venta {
+  id          String   @id @default(uuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id])
+  servicioId  String
+  servicio    Servicio @relation(fields: [servicioId], references: [id])
+  marca       String?  // Bótox | Nabota
+  monto       Decimal  @db.Decimal(10, 2)
+  fecha       DateTime @default(now())
+}
+
+// ── Reportes automáticos con link público ────────────────────
+
+model ReporteAnalisis {
+  id            String   @id @default(uuid())
+  clinicaId     String
+  clinica       Clinica  @relation(fields: [clinicaId], references: [id])
+  periodoInicio DateTime
+  periodoFin    DateTime
+  metricasJson  Json
+  narrativaIA   String?
+  tokenPublico  String   @unique
+  expiraEn      DateTime?
+  createdAt     DateTime @default(now())
+}

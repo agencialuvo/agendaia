@@ -1,0 +1,279 @@
+{
+  "clinica": {
+    "id": "velia",
+    "nombre": "VELIA Centro Estético",
+    "agente_ia": {
+      "nombre": "Yazmín",
+      "tono": "cercano, uso moderado de emojis (🙂 ✨ 😊 🤍)",
+      "firma_variantes": ["te saluda Yazmín de VELIA", "te saluda Yazmín, del equipo de VELIA", "soy Yazmín de VELIA"]
+    },
+    "ubicacion": {
+      "direccion": "Jirón Cinco Esquinas 550, Cajamarca 06002",
+      "referencia": "a dos cuadras de la Recoleta y tres cuadras de Plaza de Armas",
+      "maps_url": "https://maps.app.goo.gl/MX8hciFR8Y7Za2xU8?g_st=aw"
+    },
+    "horario_atencion": {
+      "dias": ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado"],
+      "hora_inicio": "09:00",
+      "hora_fin": "22:00",
+      "corte_para_ofrecer_mismo_dia": "20:00",
+      "corte_nota": "❓ propuesto proporcionalmente (2h antes del cierre, igual que la regla original de 6pm con el horario viejo de 8pm). El guión original solo especificaba '6pm' en base al horario anterior — confirmar con el cliente si se mantiene igual o se ajusta a las 10pm de cierre real.",
+      "domingo": {
+        "atiende_evaluaciones_normales": false,
+        "excepcion_mensaje": "Para domingos manejamos un abono del 50% del servicio seleccionado para separar el cupo especial, ¿Te gustaría coordinarlo así?",
+        "porcentaje_abono_domingo": 50,
+        "base_calculo": "precio_del_servicio_seleccionado",
+        "nota": "el abono ya no es un monto fijo (antes S/600) — se calcula como 50% del precio real del servicio que el paciente quiere agendar"
+      }
+    },
+    "doctores": [
+      { "nombre": "Dra. Jhoana Infante", "especialidades": ["Bótox", "Control post-aplicación"] },
+      { "nombre": "Dr. Jefferson Villegas", "especialidades": ["Bótox"] },
+      { "nombre": "Dr. Jeffrey", "especialidades": ["Eliminación de tatuazes (Nd YAG Pico)"], "nota": "confirmar nombre completo con el cliente" }
+    ]
+  },
+
+  "scoring": {
+    "preguntas_clave": [
+      {
+        "pregunta": "¿Cuándo te gustaría coordinar tu evaluación?",
+        "puntajes": {
+          "Esta semana": 3,
+          "La próxima semana si hay disponibilidad": 2,
+          "Necesito que me indiquen horarios": 1
+        }
+      },
+      {
+        "pregunta": "Acuerdo de pago (S/50)",
+        "puntajes": {
+          "Sí, estoy de acuerdo": 2,
+          "Necesito que me expliquen antes de agendar": 0
+        }
+      },
+      {
+        "pregunta": "¿Puedes asistir presencialmente en Cajamarca?",
+        "puntajes": {
+          "Sí, puedo asistir": 2,
+          "Necesito confirmar disponibilidad": 0
+        }
+      }
+    ],
+    "rangos": {
+      "caliente": { "min": 6, "max": 7 },
+      "tibio": { "min": 3, "max": 5 },
+      "frio": { "min": 0, "max": 2 }
+    }
+  },
+
+  "regla_horarios": {
+    "logica": "ofrecer_siempre_proximo_dia_habil_disponible_mas_el_siguiente",
+    "ejemplo": "Si hoy es martes, ofrecer miércoles y jueves (no saltar a viernes ni ofrecer solo uno)",
+    "corte_tarde": {
+      "hora": "18:00",
+      "regla": "si ya pasan las 6pm, no ofrecer 'esta tarde' ni 'hoy' — pasar directo a 'mañana'"
+    }
+  },
+
+  "apertura_diagnostico": {
+    "nota": "va justo después del saludo inicial, antes de hablar de precio o cita",
+    "variantes": [
+      "¿Es la primera vez que estás pensando en aplicarte Bótox?",
+      "Cuéntame, ¿Qué es lo que más te gustaría mejorar de tu rostro ahora mismo?",
+      "Como conversamos la semana pasada sobre {zona}, quería retomarlo contigo — ¿seguimos coordinando?"
+    ]
+  },
+
+  "guiones_primer_contacto": {
+    "caliente": {
+      "puntaje": "6-7",
+      "objetivo_tiempo_respuesta_horas": 2,
+      "variantes": [
+        "Hola {nombre}, te saluda Yazmín de VELIA 🙂 Vi que te gustaría evaluar {zona} y que quieres agendar esta semana. ¿Tienes más disponibilidad por la mañana o por la tarde para encontrar el mejor horario?",
+        "Hola {nombre} te saluda Yazmín, del equipo de VELIA. Justo estamos armando la agenda de esta semana — ¿Tienes más disponibilidad en la mañana o en la tarde?"
+      ],
+      "siguiente_paso": "Perfecto, tengo espacio el [día 1] o el [día 2] entre [franja elegida] — ¿Cuál te acomoda mejor?"
+    },
+    "tibio": {
+      "puntaje": "3-5",
+      "variantes": [
+        "Hola {nombre}, te saluda Yazmín de VELIA 🙂 Qué bueno que te animaste a consultar por {zona}. Cuéntame, ¿Tienes más disponibilidad esta semana o la próxima?",
+        "¡Hola {nombre}! Gracias por escribirnos. Vi tu interés en {zona} — ¿Te acomoda mejor coordinar esta semana o prefieres la próxima?"
+      ],
+      "si_elige_proxima_semana": "Sin problema, dejamos tu cupo reservado para la próxima semana. ¿Qué día te cae mejor entre semana o fin de semana?"
+    },
+    "frio": {
+      "puntaje": "0-2",
+      "duda_pago": {
+        "trigger": "Necesito que me expliquen antes de agendar",
+        "mensaje": "Hola {nombre}, te saluda Yazmín de VELIA. Tranquila, no hay ningún compromiso. La evaluación es para que la doctora te oriente sin presión. Y los S/50 los pagas el mismo día que vengas, ni un sol antes. ¿Te cuento qué días tenemos libres esta semana?"
+      },
+      "duda_zona": {
+        "trigger": "Necesito confirmar disponibilidad",
+        "mensaje": "Hola {nombre}, soy Yazmín de VELIA 🙂 Para poder atenderte, la evaluación tiene que ser presencial en nuestro local en Cajamarca. ¿Nos confirmas si vives por acá o estás de paso?",
+        "si_confirma_si_vive_en_cajamarca": "pasar a usar el guión de tibio",
+        "si_confirma_que_no": "Entiendo, por ahora solo atendemos de forma presencial en Cajamarca. Cuando estés por la ciudad, aquí estamos para ayudarte. 🙂"
+      }
+    }
+  },
+
+  "objeciones": [
+    {
+      "id": "sin_lineas_marcadas",
+      "disparador": "No tengo (o no tengo tan marcadas) las líneas de expresión",
+      "respuesta": "Entiendo, y es justo el mejor momento. Imagina una hoja de papel: cada vez que la doblas sobre el mismo lugar, la marca se hace más profunda y cada vez es más difícil que vuelva a quedar lisa. Con las líneas de expresión pasa algo parecido — se van marcando poco a poco por el gesto repetido. Por eso conviene evaluarte antes de que se noten más, no después.",
+      "media": null
+    },
+    {
+      "id": "quien_atiende",
+      "disparador": "¿Quién me atiende, es médico?",
+      "respuesta": "Sí, en VELIA todas las aplicaciones las hacen médicos especialistas en Bótox. La Dra. Jhoana Infante o el Dr. Jefferson Villegas, según el caso. Te dejo un video corto de una aplicación reciente para que veas cómo trabajamos.",
+      "media": "video_testimonio_lisbeth"
+    },
+    {
+      "id": "que_marca",
+      "disparador": "¿Qué marca usan?",
+      "respuesta": "Trabajamos con la marca americana Bótox, la que usamos actualmente para todos los tratamientos. Buscamos siempre resultados naturales en el rostro, sin cambiar tus expresiones.",
+      "media": null
+    },
+    {
+      "id": "ya_aplicada_full_face",
+      "disparador": "Ya me apliqué antes en otra zona / quiero full face",
+      "respuesta": "Como ya te aplicaste antes, lo ideal es que la doctora te vuelva a evaluar el rostro completo: volumen, estructura y flacidez. Para armar un plan que se vea natural y no un rostro congelado. Por eso el full face también necesita su evaluación previa.",
+      "media": null
+    },
+    {
+      "id": "precio_caro",
+      "disparador": "Está caro / duda de precio",
+      "respuesta": "Entiendo la duda. Lo que pagas primero es solo la evaluación (S/50), y ese monto se descuenta del tratamiento si decides iniciarlo, no arriesgas nada por conocer tu caso primero. Y ahí mismo la doctora te dice el precio exacto según lo que necesites, nada a ciegas.",
+      "media": null
+    },
+    {
+      "id": "miedo_cara_congelada",
+      "disparador": "Tengo miedo que se me vea la cara rara / congelada",
+      "respuesta": "Es de las dudas más comunes, tranquila. Justo por eso el tratamiento parte de una evaluación. La doctora aplica el tratamiento según tu rostro para que el resultado sea natural, no congelado. Te dejo un video de un caso real para que veas cómo queda.",
+      "media": "video_antes_despues_clientes"
+    },
+    {
+      "id": "lo_voy_a_pensar",
+      "disparador": "Lo voy a pensar (sin dar razón concreta)",
+      "respuesta": "Claro, tómate tu tiempo. Solo te comento que los cupos de esta semana se están llenando rápido. Si quieres, te dejo separado sin compromiso y confirmamos en dos días, ¿Te parece?",
+      "media": null
+    }
+  ],
+
+  "confirmacion_cita_formato": "DATOS DE LA CITA PROGRAMADA\nNombre: {nombre}\nMotivo de consulta: {zona}\nCelular: {telefono}\nFecha de evaluación: {fecha}\nHora: {hora}",
+
+  "recordatorios": {
+    "24h_antes": "Hola {nombre}, te saluda Yazmín de VELIA ☺️ Paso a recordarte que mañana tienes tu evaluación a las {hora}. ¿Me confirmas tu asistencia para mantener tu espacio reservado?",
+    "manana_del_dia": "Buenos días {nombre} ✨ Recuerda que hoy tienes tu cita a las {hora}. Cualquier ayuda para llegar me avisas.",
+    "2h_antes": "Hola {nombre}, te esperamos a las {hora}. Cualquier imprevisto avísame para ayudarte con el horario."
+  },
+
+  "retargeting": {
+    "dia_15_sin_respuesta": "Hola {nombre}, ¿Cómo estás? Hace un tiempo conversamos sobre tu evaluación en VELIA. Seguimos con cupos esta semana si te animas a retomarlo.",
+    "dia_30_sin_respuesta": "Hola {nombre}, te escribo de VELIA otra vez. Vi que antes te interesó la evaluación — por si acaso, el beneficio del descuento en la evaluación sigue disponible. Cualquier cosa me cuentas.",
+    "no_show_del_dia": "Hola {nombre}, te escribo porque tenías tu evaluación programada y quizá se te complicó asistir. No quiero dejar tu caso pendiente ¿Reagendamos para esta semana? ¿Te acomoda mejor mañana o tarde?",
+    "liberacion_cupo_tras_2do_intento": "Entendemos que no pudiste confirmar, así que pasamos tu cupo a otra persona interesada. Cuando quieras retomarlo, aquí seguimos."
+  },
+
+  "post_visita": {
+    "mensaje_control": "Gracias por atenderte con nosotros, {nombre} ✨ Esperamos que hayas tenido una buena experiencia con la doctora. ¿Cómo te sentiste con la atención?",
+    "solicitud_resena": {
+      "si_respuesta_positiva": true,
+      "google_link": "https://acortar.link/b7l6n8",
+      "facebook_link": "https://www.facebook.com/profile.php?id=61570967558809&sk=reviews&locale=es_LA"
+    },
+    "cross_sell_sugeridos": [],
+    "cross_sell_nota": "❓ desactivado temporalmente — el guión original sugería IPL y limpieza facial como cross-sell, pero esos servicios quedaron fuera del alcance activo (ver 'servicios_futuros_no_activos'). Reactivar aquí cuando se agreguen esos servicios."
+  },
+
+  "seguimiento_control": {
+    "recordatorio_proximo_control": "Hola {nombre}, te recuerda Yazmín de VELIA ✨ Mañana tienes tu cita de control. Cualquier cosa me avisas.",
+    "nota": "❓ propuesto — no existía en el guión original de VELIA; se agrega para conectar el campo 'próximo control' de la Ficha de Control con la secuencia automática de recordatorios (Plan de Implementación, Etapa 4, punto 17). Confirmar tono/redacción con el cliente."
+  },
+
+  "servicios": [
+    {
+      "id": "botox_evaluacion",
+      "nombre": "Evaluación facial (previa a Bótox)",
+      "requiere_evaluacion_previa": true,
+      "precio_evaluacion": 50,
+      "evaluacion_descontable_del_tratamiento": true,
+      "moneda": "PEN"
+    },
+    {
+      "id": "botox_toxina_botulinica",
+      "nombre": "Bótox (toxina botulínica)",
+      "servicio_principal": true,
+      "marcas_disponibles": [
+        { "marca": "Bótox", "precio_referencial": 1200, "prioridad": 1, "margen": "mayor" },
+        { "marca": "Nabota", "precio_referencial": 900, "prioridad": 2, "margen": "menor" }
+      ],
+      "regla_priorizacion_comercial": {
+        "logica": "ofrecer_siempre_marca_prioridad_1_primero",
+        "detalle": "La IA y los agentes deben recomendar y cotizar BOTOX por defecto en toda conversación, sin mencionar NABOTA de entrada. Solo se ofrece NABOTA como alternativa si el paciente indica explícitamente que el presupuesto no le alcanza para BOTOX o pide una opción más económica.",
+        "frase_sugerida_al_ofrecer_alternativa": "Entiendo, también contamos con Nabota, una alternativa de buena calidad a un costo menor, ¿te gustaría cotizar con esa marca?"
+      },
+      "requiere_evaluacion_previa": true,
+      "nota": "precios de referencia según brief del cliente; confirmar vigencia",
+      "alias_coloquiales": ["full face"],
+      "nota_alias": "Los doctores confirman que 'full face' NO es un servicio aparte — es como los pacientes llaman coloquialmente a la aplicación de Bótox (rostro completo). Cuando un lead pide 'full face', se cotiza y agenda como este mismo servicio (botox_toxina_botulinica), sin crear un servicio ni precio distinto."
+    }
+  ],
+
+  "servicios_futuros_no_activos": {
+    "nota": "el cliente indicó que por ahora el único servicio activo es Toxina Botulínica marca BOTOX. Estos quedan documentados para cuando se agreguen, pero el motor de IA y el scoring NO deben ofrecerlos ni cotizarlos mientras no se activen aquí.",
+    "servicios": [
+      {
+        "id": "ipl_rosacea",
+        "nombre": "IPL para rosácea",
+        "requiere_evaluacion_previa": null,
+        "precio_referencial": null,
+        "nota": "pendiente de precio y regla de evaluación"
+      },
+      {
+        "id": "limpieza_facial",
+        "nombre": "Limpieza facial profunda",
+        "requiere_evaluacion_previa": false,
+        "precio_referencial": null,
+        "nota": "pendiente de precio"
+      },
+      {
+        "id": "eliminacion_tatuajes",
+        "nombre": "Eliminación de tatuajes (tecnología Nd YAG Pico)",
+        "requiere_evaluacion_previa": true,
+        "precio_referencial": null,
+        "doctor_asignado": "Dr. Jeffrey",
+        "nota": "pendiente de precio de evaluación y del tratamiento"
+      }
+    ]
+  },
+
+  "campanas_especiales": {
+    "nota": "flujo distinto al de formulario directo — leads que entran por sorteo/grupo de WhatsApp",
+    "flujo": [
+      "Confirmar 2 datos antes de agregar al grupo: ¿acepta ser grabada? y ¿tiene disponibilidad esta semana?",
+      "Agregar al grupo de WhatsApp",
+      "Ofrecer beneficio exclusivo (ej. evaluación sin costo o descuento) con vigencia definida",
+      "Agendar igual que un lead normal una vez confirma interés"
+    ]
+  },
+
+  "version": "1.3",
+  "fecha_estructuracion": "2026-07-21",
+  "fecha_ultima_actualizacion": "2026-07-22",
+  "cambios_v1.3": [
+    "Agregada sección 'seguimiento_control' (propuesta) para el recordatorio automático de próximo control, conectado al campo fechaProximoControl de la Ficha de Control"
+  ],
+  "cambios_v1.2": [
+    "Eliminado el servicio separado 'full_face' — confirmado con el cliente que es un alias coloquial de botox_toxina_botulinica, no un servicio ni precio distinto"
+  ],
+  "cambios_v1.1": [
+    "Horario corregido: lunes a sábado 9am-10pm (antes 10am-8pm)",
+    "Domingo: abono ahora es 50% del precio del servicio seleccionado, no un monto fijo",
+    "Agregada regla de priorización comercial BOTOX > NABOTA",
+    "IPL, limpieza facial y eliminación de tatuajes movidos a servicios_futuros_no_activos — foco único es Toxina Botulínica marca BOTOX",
+    "Cross-sell post-visita desactivado temporalmente por depender de servicios no activos"
+  ],
+  "fuente": "Guión de venta - VELIA 16_07.docx + 14 conversaciones de WhatsApp + requerimientos del cliente.txt"
+}

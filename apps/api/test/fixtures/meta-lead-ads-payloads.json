@@ -1,0 +1,57 @@
+{
+  "_nota": "Payloads simulados con la forma real de un webhook de Meta Lead Ads (leadgen_id, campaign_id, field_data). Úsalos contra POST /clinicas/velia/webhooks/meta-leads mientras no haya acceso real a la cuenta de Meta Business de VELIA.",
+
+  "lead_caliente": {
+    "leadgen_id": "sim-lead-001",
+    "campaign_id": "sim-campaign-001",
+    "campaign_name": "VELIA - Bótox Cajamarca - Prospección",
+    "adset_id": "sim-adset-001",
+    "adset_name": "Mujeres 25-45 Cajamarca",
+    "ad_id": "sim-ad-001",
+    "ad_name": "Video antes-despues Lisbeth",
+    "platform": "ig",
+    "field_data": [
+      { "name": "full_name", "values": ["Ana Torres"] },
+      { "name": "phone_number", "values": ["+51987654321"] },
+      { "name": "pregunta_1", "values": ["Esta semana"] },
+      { "name": "pregunta_2", "values": ["Sí, estoy de acuerdo"] },
+      { "name": "pregunta_3", "values": ["Sí, puedo asistir"] }
+    ]
+  },
+
+  "lead_tibio": {
+    "leadgen_id": "sim-lead-002",
+    "campaign_id": "sim-campaign-001",
+    "campaign_name": "VELIA - Bótox Cajamarca - Prospección",
+    "adset_id": "sim-adset-002",
+    "adset_name": "Mujeres 30-50 Cajamarca",
+    "ad_id": "sim-ad-002",
+    "ad_name": "Carrusel objeciones",
+    "platform": "fb",
+    "field_data": [
+      { "name": "full_name", "values": ["Carla Vega"] },
+      { "name": "phone_number", "values": ["+51987654322"] },
+      { "name": "pregunta_1", "values": ["La próxima semana si hay disponibilidad"] },
+      { "name": "pregunta_2", "values": ["Sí, estoy de acuerdo"] },
+      { "name": "pregunta_3", "values": ["Necesito confirmar disponibilidad"] }
+    ]
+  },
+
+  "lead_frio": {
+    "leadgen_id": "sim-lead-003",
+    "campaign_id": "sim-campaign-001",
+    "campaign_name": "VELIA - Bótox Cajamarca - Prospección",
+    "adset_id": "sim-adset-001",
+    "adset_name": "Mujeres 25-45 Cajamarca",
+    "ad_id": "sim-ad-001",
+    "ad_name": "Video antes-despues Lisbeth",
+    "platform": "ig",
+    "field_data": [
+      { "name": "full_name", "values": ["Diana Ríos"] },
+      { "name": "phone_number", "values": ["+51987654323"] },
+      { "name": "pregunta_1", "values": ["Necesito que me indiquen horarios"] },
+      { "name": "pregunta_2", "values": ["Necesito que me expliquen antes de agendar"] },
+      { "name": "pregunta_3", "values": ["Necesito confirmar disponibilidad"] }
+    ]
+  }
+}
